@@ -5,6 +5,7 @@ import "./lib/Tick.sol";
 import "./lib/Position.sol";
 import "forge-std/interfaces/IERC20.sol";
 import "./interfaces/IUniswapV3MintCallback.sol";
+import "forge-std/console.sol";
 
 error InvalidTickRange();
 error InvalidAddress();
@@ -123,7 +124,7 @@ contract UniswapV3Pool {
             upperTick,
             amount,
             amount0,
-            amount1
+            amount
         );
     }
 
