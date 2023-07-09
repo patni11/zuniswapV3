@@ -135,4 +135,6 @@ contract UniswapV3Pool {
     function getBalance1() internal view returns (uint256) {
         return IERC20(token1).balanceOf(address(this));
     }
+
+    function swap() external {}
 }
