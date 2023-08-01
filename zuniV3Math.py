@@ -45,9 +45,23 @@ amount_usdc = 5000 * eth
 liq0 = calculate_liquidity_0(amount_eth, sqrtp_curr, sqrtp_upper)
 liq1 = calculate_liquidity_1(amount_usdc, sqrtp_curr, sqrtp_low)
 liq = int(min(liq0, liq1))
-print(liq)
+#print(liq)
 
 # calculating x and y values based on provided liquidity to 
 amount0 = calculate_x(liq, sqrtp_upper, sqrtp_curr)
 amount1 = calculate_y(liq, sqrtp_low, sqrtp_curr)
-print(amount0, amount1)
+#print(amount0, amount1)
+
+
+# Calculating Swap Amounts
+amount_in = 42 * eth # 42 USDC
+price_diff = (amount_in*Q96)//liq #deltaY
+price_next = sqrtp_curr + price_diff #new reserve
+usdcIn = calculate_y(liq,price_next,sqrtp_curr)
+ethOut = calculate_x(liq,price_next,sqrtp_curr)
+
+print("price next",price_next)
+print((price_next/Q96)**2)
+print("New Tick", price_to_tick((price_next/Q96)**2))
+print("USDC IN", usdcIn/eth)
+print("ETH OUT", ethOut/eth)

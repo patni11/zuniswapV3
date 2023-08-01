@@ -5,6 +5,7 @@ import "./lib/Tick.sol";
 import "./lib/Position.sol";
 import "forge-std/interfaces/IERC20.sol";
 import "./interfaces/IUniswapV3MintCallback.sol";
+import "./interfaces/IUniswapV3SwapCallback.sol";
 import "forge-std/console.sol";
 
 error InvalidTickRange();
@@ -23,6 +24,12 @@ contract UniswapV3Pool {
     struct Slot0 {
         uint160 sqrtPriceX96;
         int24 tick;
+    }
+
+    struct CallbackData {
+        address token0;
+        address token1;
+        address payer;
     }
 
     Slot0 public slot0;
@@ -50,6 +57,16 @@ contract UniswapV3Pool {
         uint amount1
     );
 
+    event Swap(
+        address caller,
+        address recipient,
+        int256 amount0,
+        int256 amount1,
+        uint160 sqrtPriceX96,
+        uint128 liquidity,
+        int24 tick
+    );
+
     constructor(
         address _token0,
         address _token1,
@@ -73,7 +90,8 @@ contract UniswapV3Pool {
         address owner,
         int24 lowerTick,
         int24 upperTick,
-        uint128 amount
+        uint128 amount,
+        bytes calldata data
     ) external returns (uint amount0, uint amount1) {
         if (
             lowerTick < MIN_TICK ||
@@ -108,7 +126,8 @@ contract UniswapV3Pool {
 
         IUniswapV3MintCallback(msg.sender).uniswapV3MintCallback(
             amount0,
-            amount1
+            amount1,
+            data
         );
 
         if (amount0 > 0 && balance0Before + amount0 > getBalance0())
@@ -136,5 +155,42 @@ contract UniswapV3Pool {
         return IERC20(token1).balanceOf(address(this));
     }
 
-    function swap() external {}
+    function swap(
+        address recipient,
+        bytes calldata data
+    ) public returns (int256 amount0, int256 amount1) {
+        amount0 = -0.008396714242162444 ether;
+        amount1 = 42 ether;
+
+        int24 nextTick = 85284;
+        uint160 nextPrice = 5604469350942327889444743441197;
+
+        (slot0.tick, slot0.sqrtPriceX96) = (nextTick, nextPrice);
+
+        // send the amount to caller and ask them to send some amount
+
+        IERC20(token0).transfer(recipient, uint256(-amount0));
+
+        uint256 balance1Before = getBalance1();
+
+        IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(
+            amount0,
+            amount1,
+            data
+        );
+
+        if (balance1Before + uint256(amount1) > getBalance1()) {
+            revert InsufficientInputAmount();
+        }
+
+        emit Swap(
+            msg.sender,
+            recipient,
+            amount0,
+            amount1,
+            nextPrice,
+            liquidity,
+            nextTick
+        );
+    }
 }
